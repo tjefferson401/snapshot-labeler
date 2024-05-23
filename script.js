@@ -1,11 +1,14 @@
 // script.js
 import { PyodideApi, setPyodide } from "./PyodideHelpers/Runner.js";
+import { UNIT_TESTS } from "./constants.js";
 
 document.addEventListener('DOMContentLoaded', async () => {
     await setPyodide();
     window.pyodideClient = new PyodideApi();
 
 });
+
+const karel = ["stonemason", "fillkarel"]
 
 
 
@@ -14,7 +17,7 @@ document.addEventListener('DOMContentLoaded', async () => {
  * Cracked test 
  */
 document.getElementById('uploadButton').addEventListener('click', function() {
-    const fileInput = document.getElementById('csvFile');
+    const fileInput = document.getElementById('jsonFileInput');
     const file = fileInput.files[0];
     
     if (!file) {
@@ -24,31 +27,44 @@ document.getElementById('uploadButton').addEventListener('click', function() {
 
     const reader = new FileReader();
     reader.onload = async function(event) {
-        const csvContent = event.target.result;
-        console.log('CSV Content:', csvContent);
+        // Get JSON file content
+        const fileContent = event.target.result;
+        const jsonObject = JSON.parse(fileContent);
+    
+        console.log(jsonObject);
+    
+        // The rest of your code can go here...
+        // For example, timing a series of asynchronous operations:
+        console.time('test');
+        for (let i = 0; i < jsonObject.length; i++) {
+            const snapshots = jsonObject[i];
+            let results = [];
+            for(let unitTest of UNIT_TESTS[snapshots.assnId].unitTests) {
+                const pre = unitTest.pre
+                if (karel.includes(snapshots.assnId)) {
+                    pyodideClient.setKarelInfo(pre, ()=>{}, 0);
+                    results.push(await window.pyodideClient.crackedTest(snapshots.code, [], {name: "test.py"}));
 
-        const rows = csvContent.split('\n').map(row => row.split(','));
-        console.log('CSV Parsed:', rows);
-        console.log(rows.length)
-        console.time('test')
-        // THIS CODE SHOULD BE FASTER
-        const promises = [];
-        const results = [];
-        for(let i = 0; i < 100; i++) {
-            // handle rows to access code
-            const code = `
-def main():
-    print('Hello, World!')
-
-if __name__ == '__main__':
-    main()
-`
-            results.push(await window.pyodideClient.crackedTest(code, [], {name: "test.py"}))
-
+                }else {
+                    results.push(await window.pyodideClient.crackedTest(snapshots.code, pre, {name: "test.py"}));
+                }
+            }
+            jsonObject[i].results = results;
         }
-        // END OF FASTER CODE
-        console.timeEnd('test')
-        console.log(results)
+
+    
+        console.timeEnd('test');
+        // spit out json file that is same as file content, but with results added
+        
+        const blob = new Blob([JSON.stringify(jsonObject)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'output.json';
+        a.click();
+        URL.revokeObjectURL(url);
+        
+
     };
     reader.onerror = function(event) {
         console.error('File could not be read! Code ' + event.target.error.code);
