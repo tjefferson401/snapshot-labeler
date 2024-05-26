@@ -399,6 +399,7 @@ ${indentedCode}
   }
 
    async _runResumerCallback() {
+  
     try {
       await pyodide.runPython(RUN_MAINAPP)
     } catch (e) {
@@ -407,10 +408,20 @@ ${indentedCode}
       this.setRunningFlag();
       return;
     }
+
     
     const userCmd = pyodide.globals.get("__unthrowActiveCommand__").toJs();
     const runFinished = pyodide.globals.get("finished");
-    if(runFinished) {
+    const mem = performance.memory
+    console.log(performance.memory)
+    if(mem.usedJSHeapSize/mem.jsHeapSizeLimit > 0.8) {
+      console.log("HEHEHRHEHERHEHRH")
+      cons
+      await this.handleStderr("Memory Limit Exceeded")
+      this.setRunningFlag();
+      await this.handleRunEnd()
+    }
+    else if(runFinished) {
       await this.handleRunEnd()
     } else if(! this.isPythonRunning) {
       this.handleStdout("KeyboardInterrupt")

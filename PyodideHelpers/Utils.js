@@ -13,11 +13,12 @@ import time
 import sys
 finished = False
 import unthrow
-____step_freq = 10000000
+____step_freq = 20
 unthrow.step_mode = "False"
 unthrow.test_mode = "True"
 unthrow.term_log = []
-unthrow.max_lines = 100000
+unthrow.max_lines = 5000
+print(unthrow.max_lines)
 unthrow.step_list = []
 unthrow.max_sl_size = 1000
 unthrow.rec_depth = 800
